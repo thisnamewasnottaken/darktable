@@ -1,7 +1,9 @@
-[![icon](/data/pixmaps/idbutton.png?raw=true)](https://www.darktable.org/) darktable [![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/darktable-org/darktable/CI/master)](https://github.com/darktable-org/darktable/actions/workflows/ci.yml?query=branch%3Amaster+is%3Acompleted+event%3Apush) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/470/badge)](https://bestpractices.coreinfrastructure.org/projects/470)
+[![icon](/data/pixmaps/idbutton.png?raw=true)](https://www.darktable.org/) darktable [![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/darktable-org/darktable/ci.yml?branch=master)](https://github.com/darktable-org/darktable/actions/workflows/ci.yml?query=branch%3Amaster+is%3Acompleted+event%3Apush) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/470/badge)](https://bestpractices.coreinfrastructure.org/projects/470)
 =========
 
 darktable is an open source photography workflow application and non-destructive raw developer - a virtual lighttable and darkroom for photographers. It manages your digital negatives in a database, lets you view them through a zoomable lighttable and enables you to develop raw images, enhance them and export them to local or remote storage.
+
+![screenshot_lighttable](https://user-images.githubusercontent.com/45535283/148689197-e53dd75f-32f1-4297-9a0f-a9547fd4e7c7.jpg)
 
 darktable is **not** a free Adobe® Lightroom® replacement.
 
@@ -18,7 +20,7 @@ darktable is **not** a free Adobe® Lightroom® replacement.
    - [Latest release](#latest-release)
    - [Development snapshot](#development-snapshot)
 5. [Updating from older versions](#updating-from-older-versions)
-6. [Obtaining extensions](#obtainin-extensions)
+6. [Obtaining extensions](#obtaining-extensions)
 7. [Building](#building)
    - [Dependencies](#dependencies)
    - [Get the source](#get-the-source)
@@ -53,12 +55,14 @@ Requirements
 
 ### Supported platforms
 
-* Linux (64 bit)
-* Free BSD (64 bit)
-* Windows 8 (64 bit), Windows 10 (64 bit)
-* macOS
+* Linux (64-bit)
+* FreeBSD (64-bit)
+* Windows (64-bit), 8.1 w/ [UCRT](https://support.microsoft.com/en-us/topic/update-for-universal-c-runtime-in-windows-c0514201-7fe6-95a3-b0a5-287930f3560c) and later
+* macOS 11.3 and later
 
-*32 bit platforms are not officially supported - they might or might not work.*
+*Big-endian platforms are not supported.*
+
+*32-bit platforms are not officially supported - they might or might not work.*
 
 *Windows support is still young and suffers from bugs that do not affect Linux. If possible,
 prefer using darktable on Linux.*
@@ -67,7 +71,7 @@ prefer using darktable on Linux.*
 
 (workable minimum / **recommended minimum**):
 * RAM: 4 GB / **8 GB**
-* CPU: Intel Pentium 4 / **Intel Core i5 4×2.4 GHz**
+* CPU: Intel Pentium 4 (Core 2 for Windows) / **Intel Core i5 4×2.4 GHz**
 * GPU: none / **Nvidia with 1024 CUDA cores, 4 GB, OpenCL 1.2 compatible**
 * free disk space: 250 MB / **1 GB**
 
@@ -85,10 +89,11 @@ you can build the software yourself following the instructions [below](#building
 
 ### Latest release
 
-3.6.1 (stable)
+4.2.1 (stable)
 
-* [Download executable for Windows](https://github.com/darktable-org/darktable/releases/download/release-3.6.1/darktable-3.6.1-win64.exe)
-* [Download executable for mac OS](https://github.com/darktable-org/darktable/releases/download/release-3.6.1/darktable-3.6.1.6.dmg)
+* [Download executable for Windows](https://github.com/darktable-org/darktable/releases/download/release-4.2.1/darktable-4.2.1-win64.exe)
+* [Download executable for macOS on Intel](https://github.com/darktable-org/darktable/releases/download/release-4.2.1/darktable-4.2.1_x86_64.dmg)
+* [Download executable for macOS on Apple Silicon](https://github.com/darktable-org/darktable/releases/download/release-4.2.1/darktable-4.2.1_arm64.dmg)
 * [Install native packages and repositories for Linux](https://software.opensuse.org/download.html?project=graphics:darktable:stable&package=darktable)
 * [Install Flatpak package for Linux](https://flathub.org/apps/details/org.darktable.Darktable)
 * [More information about installing darktable on any system](https://www.darktable.org/install/)
@@ -96,14 +101,14 @@ you can build the software yourself following the instructions [below](#building
 *When using a pre-built package, ensure that it has been built with Lua, OpenCL, OpenMP and Colord support.
 These are optional and will not prevent darktable from running if missing,
 but their absence will degrade the user experience.
-Notably, some Flatpak, Snap and Appimage packages lack OpenCL and Lua support.*
+Notably, some Flatpak, Snap and AppImage packages lack OpenCL and Lua support.*
 
 ### Development snapshot
 
 The development snapshot reflects the current state of the master branch. It is intended for testing and is generally not safe. See the notes [below](#get-the-source) for warnings and precautions about using the master branch.
 
 * [Install native packages and repositories for Linux](https://software.opensuse.org/download.html?project=graphics:darktable:master&package=darktable) (one snapshot per day).
-* No pre-compiled packages are provided for the master branch on macOS and Windows. See how to build it manually below.
+* [Binary packages are provided for macOS and Windows on a nightly basis](https://github.com/darktable-org/darktable/actions/workflows/nightly.yml) (x86_64 only).
 
 Updating from older versions
 ----------------------------
@@ -125,7 +130,7 @@ darktable automatically backs up the library database when a new version causes 
 you can revert to the previous release by restoring this backup if needed
 (simply rename it to `library.db`).
 
-If you try to open a newer database with an older version of the software, any portions of your edits that were 
+If you try to open a newer database with an older version of the software, any portions of your edits that were
 undertaken with new features will be discarded and you will lose them. This also applies to the sidecar XMP files.
 
 If you plan to move regularly between two versions (new/unstable and old/stable) see [below](#testunstable-version)
@@ -146,39 +151,49 @@ Building
 
 ### Dependencies
 
-Compatible compilers:
-* Clang: 8, 9, 10
-* GCC: 8, 9, 10
-* Mingw64: 6, 7
+Compatible compilers/toolchains:
+* Clang: 12 and later
+* GCC: 12 and later
+* MinGW-w64: 10 and later
+* XCode: 13.2 and later
 
 Required dependencies (minimum version):
-* CMake 3.10
-* Gtk 3.22
-* Glib 2.40
-* SQLite 3.15 (but 3.24 strongly recommended)
+* CMake 3.18
+* GTK 3.24.15
+* GLib 2.40
+* SQLite 3.15 *(but 3.24 or newer strongly recommended)*
+* Exiv2 0.25 *(but at least 0.27.4 built with ISO BMFF support needed for Canon CR3 raw import)*
+
+Required dependencies (no version requirement):
+* Lensfun *(for automatic lens correction)* (Note: alpha 0.3.95 and git master branch are not supported)
+* Little CMS 2
 
 Optional dependencies (minimum version):
 * OpenMP 4.5 *(for CPU multi-threading and SIMD vectorization)*
 * LLVM 3.9 *(for OpenCL checks at compilation time)*
 * OpenCL 1.2 *(for GPU-accelerated computing)*
-* Lua 5.3 *(for plugins and extension scripting)*
-* libavif 0.7.2 *(for AVIF import/export)*
-* WebP 0.3.0 *(for WebP exports)*
+* Lua 5.4 *(for plugins and extension scripting)*
+* libgphoto2 2.5 *(for camera tethering)*
+* Imath 3.1.0 *(for 16-bit "half" float TIFF export and faster import)*
+* libavif 0.8.2 *(for AVIF import & export)*
+* libheif 1.13.0 *(for HEIF/HEIC/HIF import; also for AVIF import if no libavif)*
+* libjxl 0.7.0 *(for JPEG XL import & export)*
+* WebP 0.3.0 *(for WebP import & export)*
 
 Optional dependencies (no version requirement):
-* Gphoto2 *(for camera tethering)*
-* Lensfun *(for automatic lens correction)*
-* OpenEXR *(for EXR import and export)*
-* OpenJPEG *(for Jpeg2000 export)*
-* Colord, Xatom *(for fetching the system display color profile)*
-* G'Mic *(for gmz compressed lut support)*
+* colord, Xatom *(for fetching the system display color profile)*
+* G'MIC *(for .gmz compressed LUT support)*
 * PortMidi *(for MIDI input support)*
 * SDL2 *(for gamepad input support)*
+* CUPS *(for print mode support)*
+* OpenEXR *(for EXR import & export)*
+* OpenJPEG *(for JPEG 2000 import & export)*
+* GraphicsMagick or ImageMagick *(for misc image format import)*
 
 To install all the dependencies on Linux systems, you may use the source repositories of your distribution
 (provided they are up-to-date):
 
-#### Fedora and RHEL
+#### Fedora and RHEL/CentOS
 
 ```bash
 sudo dnf builddep darktable
@@ -215,9 +230,9 @@ errors like `Package XXX has not been found` or `Command YYY has no provider on 
 If you see one of these errors you should find out which package provides the missing package/command in your distribution,
 then install it. This can usually be done in your package manager (not the application manager
 customarily provided by default in your distribution) or from the internet with a search engine.
-You may need to install a package manager first (like Synaptic on Debian/Ubuntu, or DNF Dragora on Fedora/RHEL).
+You may need to install a package manager first (like APT on Debian/Ubuntu, or DNF on Fedora/RHEL).
 
-This process might be tedious but you only need to do it once. See 
+This process might be tedious but you only need to do it once. See
 [this page on building darktable](https://github.com/darktable-org/darktable/wiki/Building-darktable)
 for one-line commands that will install most dependencies on the most common Linux distributions.
 
@@ -249,22 +264,22 @@ See below (in "Using") how to start a test install of the unstable version witho
 
 #### Latest stable release
 
-3.6.1
+4.2.1
 
-The darktable project releases two major versions every year, in mid-Summer and at Christmas, tagged with even numbers (e.g. 3.0, 3.2, 3.4, 3.6).
-Minor revisions are tagged with a third digit (e.g. 3.0.1, 3.0.2) and mostly provide bug fixes and camera support.
+The darktable project releases two major versions every year, on Summer and Winter Solstices, tagged with even numbers (e.g. 4.0, 4.2, 4.4, 4.6).
+Minor revisions are tagged with a third digit (e.g. 4.0.1, 4.0.2) and mostly provide bug fixes and camera support.
 You may want to compile these stable releases yourself to get better performance for your particular computer:
 
 ```bash
 git clone --recurse-submodules --depth 1 https://github.com/darktable-org/darktable.git
 cd darktable
 git fetch --tags
-git checkout tags/release-3.6.1
+git checkout tags/release-4.2.1
 ```
 
 ### Get submodules
 
-Note that [LibXCF](https://github.com/houz/libxcf.git), [OpenCL](https://github.com/KhronosGroup/OpenCL-Headers.git), [rawspeed](https://github.com/darktable-org/rawspeed), [whereami](https://github.com/gpakosz/whereami) and [LibRaw](https://github.com/LibRaw/LibRaw) are tracked via git submodules, so after checking-out darktable, you need to update/checkout the submodules too:
+Note that [libxcf](https://github.com/houz/libxcf.git), [OpenCL](https://github.com/KhronosGroup/OpenCL-Headers.git), [RawSpeed](https://github.com/darktable-org/rawspeed), [whereami](https://github.com/gpakosz/whereami) and [LibRaw](https://github.com/LibRaw/LibRaw) are tracked via git submodules, so after checking-out darktable, you need to update/checkout the submodules too:
 
 ```bash
 git submodule update --init
@@ -299,23 +314,35 @@ This builds the software for your architecture only, with:
 * OpenCL support (GPU offloading) if detected,
 * Lua scripting support if detected.
 
+If you want to have dartkable displayed along your other applications, you only need to add a symbolic link:
+
+```bash
+ln -s /opt/darktable/share/applications/org.darktable.darktable.desktop /usr/share/applications/org.darktable.darktable.desktop
+```
+
+Now, your custom-built darktable is ready to be used just like any pre-packaged software.
+
 #### Manual way
 
 Alternatively, you can use a manual build to pass custom arguments.
 
-##### Linux/macOS
+##### Linux
 
 ```bash
-mkdir build/
-cd build/
+mkdir build
+cd build
 cmake -DCMAKE_INSTALL_PREFIX=/opt/darktable/ ..
-make
-sudo make install
+cmake --build .
+sudo cmake --install .
 ```
+
+##### macOS
+
+See [Homebrew](https://github.com/darktable-org/darktable/blob/master/packaging/macosx/BUILD_hb.txt) or [MacPorts](https://github.com/darktable-org/darktable/blob/master/packaging/macosx/BUILD.txt) instructions.
 
 ##### Windows
 
-See https://github.com/darktable-org/darktable/blob/master/packaging/windows/BUILD.md
+See [these instructions](https://github.com/darktable-org/darktable/tree/master/packaging/windows).
 
 ### Using
 
@@ -328,7 +355,7 @@ To use a test version of darktable without damaging your regular/stable version'
 ```
 
 and ensure that you set the option "write sidecar file for each image" to "never" in preferences -> storage -> XMP. This way,
-your regular/stable version will save its configuration files in `~/.config/darktable`, as usual, 
+your regular/stable version will save its configuration files in `~/.config/darktable`, as usual,
 the test/unstable one will save in `~/.config/darktable-test`, and the two versions will not produce database conflicts.
 
 #### Regular/stable version
@@ -336,11 +363,11 @@ the test/unstable one will save in `~/.config/darktable-test`, and the two versi
 Simply launch it from your desktop application menu or, from a terminal, run `darktable` or `/opt/darktable/bin/darktable`. If the installation did not create a launcher in your applications menu, run:
 
 ```bash
-sudo ln -s /opt/darktable/share/applications/darktable.desktop /usr/share/applications/darktable.desktop
+sudo ln -s /opt/darktable/share/applications/org.darktable.darktable.desktop /usr/share/applications/org.darktable.darktable.desktop
 ```
 
 You may find darktable configuration files in `~/.config/darktable`.
-If you experience crashes at startup, try launching darktable without OpenCL, from a terminal, with `darktable --conf opencl=FALSE`.
+If you experience crashes at startup, try launching darktable from a terminal with OpenCL disabled using `darktable --disable-opencl`.
 
 ### Further reading
 
@@ -355,7 +382,7 @@ There are many ways you can contribute to the darktable project:
 * Write a blog about darktable
 * Create a tutorial for darktable
 * Help expand the [user wiki](https://github.com/darktable-org/darktable/wiki) or [user manual](https://github.com/darktable-org/dtdocs)
-* Answer questions on the [user mailing list](https://www.mail-archive.com/darktable-user@lists.darktable.org/) or the [pixls.us forums](https://discuss.pixls.us)
+* Answer questions on the [user mailing list](https://www.mail-archive.com/darktable-user@lists.darktable.org/) or the [pixls.us forum](https://discuss.pixls.us/c/software/darktable/19)
 * Share your ideas on the [developer mailing list](https://www.mail-archive.com/darktable-dev@lists.darktable.org/)
 * Test [releases](https://www.darktable.org/install/)
 * Review [pull requests](https://github.com/darktable-org/darktable/pulls)
@@ -388,7 +415,7 @@ or alternatively
 
 ### Why do the thumbnails in the lighttable view look different to the preview in the darkroom view ?
 
-For RAW files that have never been edited in darktable (when you have just imported them), the lighttable view, by default, shows 
+For RAW files that have never been edited in darktable (when you have just imported them), the lighttable view, by default, shows
 the JPEG preview placed into the RAW file by your camera. Loading this JPEG file is faster and makes the
 lighttable view more responsive when importing large collections of images.
 
@@ -396,7 +423,7 @@ However, this JPEG thumbnail is processed by the firmware of the camera, with pr
 and colors, sharpness and contrast that might not look the same as
 darktable processing (which is what you see when opening the image in the darkroom view).
 Camera manufacturers don't publish details of the pixel processing they perform in their firmware
-so their look is not exactly or easily reproducable by other software.
+so their look is not exactly or easily reproducible by other software.
 
 However, once RAW images have been edited in darktable,
 the lighttable thumbnail should exactly match the darkroom preview, as they are processed in the same way.
@@ -414,6 +441,5 @@ Wiki
 Mailing lists
 -------------
 
-* Users [[subscribe](mailto:darktable-user+subscribe@lists.darktable.org) | [archive](https://www.mail-archive.com/darktable-user@lists.darktable.org/)]
-* Developer [[subscribe](mailto:darktable-dev+subscribe@lists.darktable.org) | [archive](https://www.mail-archive.com/darktable-dev@lists.darktable.org/)]
-* CI (read-only, high traffic!) [[subscribe](mailto:darktable-ci+subscribe@lists.darktable.org) | [archive](https://www.mail-archive.com/darktable-ci@lists.darktable.org/)]
+* User's [[subscribe](mailto:darktable-user+subscribe@lists.darktable.org) | [archive](https://www.mail-archive.com/darktable-user@lists.darktable.org/)]
+* Developer's [[subscribe](mailto:darktable-dev+subscribe@lists.darktable.org) | [archive](https://www.mail-archive.com/darktable-dev@lists.darktable.org/)]

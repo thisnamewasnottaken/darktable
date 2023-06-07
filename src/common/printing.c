@@ -25,7 +25,7 @@ void _clear_pos(dt_image_pos *pos)
 
 void dt_printing_clear_box(dt_image_box *img)
 {
-  img->imgid = -1;
+  img->imgid = NO_IMGID;
   img->max_width = img->max_height = 0;
   img->exp_width = img->exp_height = 0;
   img->dis_width = img->dis_height = 0;
@@ -51,11 +51,6 @@ void dt_printing_clear_boxes(dt_images_box *imgs)
   imgs->page_width = imgs->page_height = 0;
   imgs->page_width_mm = imgs->page_height_mm = 0;
   imgs->imgid_to_load = -1;
-}
-
-static inline float sqrf(float a)
-{
-  return a * a;
 }
 
 int32_t dt_printing_get_image_box(const dt_images_box *imgs, const int x, const int y)
@@ -284,7 +279,7 @@ void dt_printing_get_image_pos(const dt_images_box *imgs, const dt_image_box *im
 }
 
 void dt_printing_setup_image(dt_images_box *imgs, const int idx,
-                             const int32_t imgid, const int32_t width, const int32_t height,
+                             const dt_imgid_t imgid, const int32_t width, const int32_t height,
                              const dt_alignment_t alignment)
 {
   dt_image_box *box = &imgs->box[idx];
@@ -332,6 +327,9 @@ void dt_printing_setup_image(dt_images_box *imgs, const int idx,
   }
 }
 
-// modelines: These editor modelines have been set for all relevant files by tools/update_modelines.sh
+// clang-format off
+// modelines: These editor modelines have been set for all relevant files by tools/update_modelines.py
 // vim: shiftwidth=2 expandtab tabstop=2 cindent
 // kate: tab-indents: off; indent-width 2; replace-tabs on; indent-mode cstyle; remove-trailing-spaces modified;
+// clang-format on
+

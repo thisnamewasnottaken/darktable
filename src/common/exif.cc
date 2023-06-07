@@ -75,8 +75,6 @@ extern "C" {
 #include "develop/masks.h"
 }
 
-#include "external/adobe_coeff.c"
-
 #define DT_XMP_EXIF_VERSION 4
 
 // persistent list of exiv2 tags. set up in dt_init()
@@ -157,6 +155,45 @@ static void _get_xmp_tags(const char *prefix, GList **taglist)
       char *tag = dt_util_dstrcat(NULL, "Xmp.%s.%s,%s", prefix, pl[i].name_, _get_exiv2_type(pl[i].typeId_));
       *taglist = g_list_prepend(*taglist, tag);
     }
+  }
+}
+static int _illu_to_temp(dt_dng_illuminant_t illu)
+{
+  switch(illu)
+  {
+    case DT_LS_StandardLightA:
+    case DT_LS_Tungsten:
+      return 2850;
+    case DT_LS_ISOStudioTungsten:
+      return 3200;
+    case DT_LS_D50:
+      return 5000;
+    case DT_LS_D55:
+    case DT_LS_Daylight:
+    case DT_LS_FineWeather:
+    case DT_LS_Flash:
+    case DT_LS_StandardLightB:
+      return 5500;
+    case DT_LS_D65:
+    case DT_LS_StandardLightC:
+    case DT_LS_CloudyWeather:
+      return 6500;
+    case DT_LS_D75:
+    case DT_LS_Shade:
+      return 7500;
+    case DT_LS_DaylightFluorescent:
+      return (5700 + 7100) / 2;
+    case DT_LS_DayWhiteFluorescent:
+      return (4600 + 5500) / 2;
+    case DT_LS_CoolWhiteFluorescent:
+    case DT_LS_Fluorescent:
+      return (3800 + 4500) / 2;
+    case DT_LS_WhiteFluorescent:
+      return (3250 + 3800) / 2;
+    case DT_LS_WarmWhiteFluorescent:
+      return (2600 + 3250) / 2;
+    default:
+      return 0;
   }
 }
 
@@ -409,6 +446,24 @@ static bool dt_exif_read_xmp_tag(Exiv2::XmpData &xmpData, Exiv2::XmpData::iterat
 }
 #define FIND_XMP_TAG(key) dt_exif_read_xmp_tag(xmpData, &pos, key)
 
+// exiftool (but apparently not exiv2) convert
+// e.g. "2017:10:23 12:34:56" to "2017-10-23T12:34:54" (ISO)
+// and some vendors incorrectly use "2017/10/23"
+// revert this to the format expected by exif and darktable
+static void _sanitize_datetime(char *datetime)
+{
+  // replace 'T' by ' ' (space)
+  char *c;
+  while((c = strchr(datetime, 'T')) != NULL)
+  {
+    *c = ' ';
+  }
+  // replace '-' and '/' by ':'
+  while((c = strchr(datetime, '-')) != NULL || (c = strchr(datetime, '/')) != NULL)
+  {
+    *c = ':';
+  }
+}
 
 // FIXME: according to http://www.exiv2.org/doc/classExiv2_1_1Metadatum.html#63c2b87249ba96679c29e01218169124
 // there is no need to pass xmpData
@@ -483,7 +538,7 @@ static bool _exif_decode_xmp_data(dt_image_t *img, Exiv2::XmpData &xmpData, int 
       }
     }
 
-    if(dt_conf_get_bool("write_sidecar_files") ||
+    if((dt_image_get_xmp_mode() != DT_WRITE_XMP_NEVER) ||
        dt_conf_get_bool("ui_last/import_last_tags_imported"))
     {
       GList *tags = NULL;
@@ -539,24 +594,7 @@ static bool _exif_decode_xmp_data(dt_image_t *img, Exiv2::XmpData &xmpData, int 
     if(FIND_XMP_TAG("Xmp.exif.DateTimeOriginal"))
     {
       char *datetime = strdup(pos->toString().c_str());
-
-      /*
-       * exiftool (but apparently not evix2) convert
-       * e.g. "2017:10:23 12:34:56" to "2017-10-23T12:34:54" (ISO)
-       * revert this to the format expected by exif and darktable
-       */
-
-      // replace 'T' by ' ' (space)
-      char *c ;
-      while ( ( c = strchr(datetime,'T') ) != NULL )
-      {
-	*c = ' ';
-      }
-      // replace '-' by ':'
-      while ( ( c = strchr(datetime,'-')) != NULL ) {
-	*c = ':';
-      }
-
+      _sanitize_datetime(datetime);
       g_strlcpy(img->exif_datetime_taken, datetime, sizeof(img->exif_datetime_taken));
       free(datetime);
     }
@@ -655,7 +693,7 @@ static bool dt_check_usercrop(Exiv2::ExifData &exifData, dt_image_t *img)
   Exiv2::ExifData::const_iterator pos = exifData.findKey(Exiv2::ExifKey("Exif.SubImage1.0xc7b5"));
   if(pos != exifData.end() && pos->count() == 4 && pos->size())
   {
-    float crop[4];
+    dt_boundingbox_t crop;
     for(int i = 0; i < 4; i++) crop[i] = pos->toFloat(i);
     if (((crop[0]>0)||(crop[1]>0)||(crop[2]<1)||(crop[3]<1))&&(crop[2]-crop[0]>0.05f)&&(crop[3]-crop[1]>0.05f))
     {
@@ -703,13 +741,11 @@ static bool dt_exif_read_exif_tag(Exiv2::ExifData &exifData, Exiv2::ExifData::co
 static void _find_datetime_taken(Exiv2::ExifData &exifData, Exiv2::ExifData::const_iterator pos,
                                  char *exif_datetime_taken)
 {
-  if(FIND_EXIF_TAG("Exif.Image.DateTimeOriginal"))
+  if((FIND_EXIF_TAG("Exif.Image.DateTimeOriginal") || FIND_EXIF_TAG("Exif.Photo.DateTimeOriginal"))
+     && pos->size() == DT_DATETIME_LENGTH)
   {
-    dt_strlcpy_to_utf8(exif_datetime_taken, 20, pos, exifData);
-  }
-  else if(FIND_EXIF_TAG("Exif.Photo.DateTimeOriginal"))
-  {
-    dt_strlcpy_to_utf8(exif_datetime_taken, 20, pos, exifData);
+    dt_strlcpy_to_utf8(exif_datetime_taken, DT_DATETIME_LENGTH, pos, exifData);
+    _sanitize_datetime(exif_datetime_taken);
   }
   else
   {
@@ -882,7 +918,7 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
       int nominator = pos->toRational(0).first;
       img->exif_focus_distance = fmax(0.0, (0.001 * nominator));
     }
-    else if(EXIV2_MAKE_VERSION(0,25,0) <= Exiv2::versionNumber() && FIND_EXIF_TAG("Exif.CanonFi.FocusDistanceUpper"))
+    else if(Exiv2::testVersion(0,25,0) && FIND_EXIF_TAG("Exif.CanonFi.FocusDistanceUpper"))
     {
       const float FocusDistanceUpper = pos->toFloat();
       if(FocusDistanceUpper <= 0.0f || (int)FocusDistanceUpper >= 0xffff)
@@ -915,11 +951,11 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
     {
       const float focus_position = pos->toFloat();
 
-      if (FIND_EXIF_TAG("Exif.Photo.FocalLengthIn35mmFilm")) {
-          const float focal_length_35mm = pos->toFloat();
+      if (focus_position && FIND_EXIF_TAG("Exif.Photo.FocalLengthIn35mmFilm")) {
+        const float focal_length_35mm = pos->toFloat();
 
-          /* http://u88.n24.queensu.ca/exiftool/forum/index.php/topic,3688.msg29653.html#msg29653 */
-          img->exif_focus_distance = (pow(2, focus_position / 16 - 5) + 1) * focal_length_35mm / 1000;
+        /* http://u88.n24.queensu.ca/exiftool/forum/index.php/topic,3688.msg29653.html#msg29653 */
+        img->exif_focus_distance = (pow(2, focus_position / 16 - 5) + 1) * focal_length_35mm / 1000;
       }
     }
 
@@ -987,7 +1023,7 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
     {
       dt_strlcpy_to_utf8(img->exif_lens, sizeof(img->exif_lens), pos, exifData);
     }
-    else if(EXIV2_MAKE_VERSION(0,25,0) <= Exiv2::versionNumber() && FIND_EXIF_TAG("Exif.PentaxDng.LensType"))
+    else if(Exiv2::testVersion(0,25,0) && FIND_EXIF_TAG("Exif.PentaxDng.LensType"))
     {
       dt_strlcpy_to_utf8(img->exif_lens, sizeof(img->exif_lens), pos, exifData);
     }
@@ -1020,9 +1056,24 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
         fprintf(stderr, "[exif] Warning: lens \"%s\" unknown as \"%s\"\n", img->exif_lens, lens.c_str());
       }
     }
+    else if(Exiv2::testVersion(0,27,4) && FIND_EXIF_TAG("Exif.NikonLd4.LensID") && pos->toLong() == 0)
+    {
+      /* Z body w/ FTZ adapter or recent F body (e.g. D780, D6) detected.
+       * Prioritize the legacy ID lookup instead of Exif.Photo.LensModel included
+       * in the default Exiv2::lensName() search below. */
+      if(FIND_EXIF_TAG("Exif.NikonLd4.LensIDNumber"))
+        dt_strlcpy_to_utf8(img->exif_lens, sizeof(img->exif_lens), pos, exifData);
+    }
     else if((pos = Exiv2::lensName(exifData)) != exifData.end() && pos->size())
     {
       dt_strlcpy_to_utf8(img->exif_lens, sizeof(img->exif_lens), pos, exifData);
+    }
+
+    /* Capitalize Nikon Z-mount lenses properly for UI presentation */
+    if(g_str_has_prefix(img->exif_lens, "NIKKOR"))
+    {
+      for(size_t i = 1; i <= 5; ++i)
+        img->exif_lens[i] = g_ascii_tolower(img->exif_lens[i]);
     }
 
     // finally the lens has only numbers and parentheses, let's try to use
@@ -1094,103 +1145,125 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
 
     // read embedded color matrix as used in DNGs
     {
-      int illu1 = -1, illu2 = -1, illu = -1; // -1: not found, otherwise the detected CalibrationIlluminant
-      float colmatrix[12];
+      float colmatrix[3][12];
+      colmatrix[0][0] = colmatrix[1][0] = colmatrix[2][0] = NAN;
+      dt_dng_illuminant_t illu[3] = { DT_LS_Unknown, DT_LS_Unknown, DT_LS_Unknown };
       img->d65_color_matrix[0] = NAN; // make sure for later testing
+
+      // Maybe there is a predefined camera matrix in adobe_coeff?
+      // fallback later via `find_temperature_from_raw_coeffs` if there is no valid illuminant
+
       // The correction matrices are taken from
       // http://www.brucelindbloom.com - chromatic Adaption.
       // using Bradford method: found Illuminant -> D65
       const float correctmat[7][9] = {
         { 0.9555766, -0.0230393, 0.0631636, -0.0282895, 1.0099416, 0.0210077, 0.0122982, -0.0204830,
-          1.3299098 }, // 23 = D50
+          1.3299098 }, // D50
         { 0.9726856, -0.0135482, 0.0361731, -0.0167463, 1.0049102, 0.0120598, 0.0070026, -0.0116372,
-          1.1869548 }, // 20 = D55
+          1.1869548 }, // D55
         { 1.0206905, 0.0091588, -0.0228796, 0.0115005, 0.9984917, -0.0076762, -0.0043619, 0.0072053,
-          0.8853432 }, // 22 = D75
+          0.8853432 }, // D75
         { 0.8446965, -0.1179225, 0.3948108, -0.1366303, 1.1041226, 0.1291718, 0.0798489, -0.1348999,
-          3.1924009 }, // 17 = Standard light A
+          3.1924009 }, // Standard light A
         { 0.9415037, -0.0321240, 0.0584672, -0.0428238, 1.0250998, 0.0203309, 0.0101511, -0.0161170,
-          1.2847354 }, // 18 = Standard light B
+          1.2847354 }, // Standard light B
         { 0.9904476, -0.0071683, -0.0116156, -0.0123712, 1.0155950, -0.0029282, -0.0035635, 0.0067697,
-          0.9181569 }, // 19 = Standard light C
+          0.9181569 }, //  Standard light C
         { 0.9212269, -0.0449128, 0.1211620, -0.0553723, 1.0277243, 0.0403563, 0.0235086, -0.0391019,
-          1.6390644 }  // F2 = cool white
+          1.6390644 }  // CoolWhiteFluorescent
       };
 
-      if(FIND_EXIF_TAG("Exif.Image.CalibrationIlluminant1")) illu1 = pos->toLong();
-      if(FIND_EXIF_TAG("Exif.Image.CalibrationIlluminant2")) illu2 = pos->toLong();
+      if(FIND_EXIF_TAG("Exif.Image.CalibrationIlluminant1")) illu[0] = (dt_dng_illuminant_t) pos->toLong();
       Exiv2::ExifData::const_iterator cm1_pos = exifData.findKey(Exiv2::ExifKey("Exif.Image.ColorMatrix1"));
+      if((illu[0] != DT_LS_Unknown) && (cm1_pos != exifData.end()) && (cm1_pos->count() == 9))
+      {
+        for(int i = 0; i < 9; i++) colmatrix[0][i] = cm1_pos->toFloat(i);
+      }
+      else
+        illu[0] = DT_LS_Unknown;
+
+      if(FIND_EXIF_TAG("Exif.Image.CalibrationIlluminant2")) illu[1] = (dt_dng_illuminant_t) pos->toLong();
       Exiv2::ExifData::const_iterator cm2_pos = exifData.findKey(Exiv2::ExifKey("Exif.Image.ColorMatrix2"));
+      if((illu[1] != DT_LS_Unknown) && (cm2_pos != exifData.end()) && (cm2_pos->count() == 9))
+      {
+        for(int i = 0; i < 9; i++) colmatrix[1][i] = cm2_pos->toFloat(i);
+      }
+      else
+        illu[1] = DT_LS_Unknown;
+      // So far the Exif.Image.CalibrationIlluminant3 tag and friends have not been implemented and there are no images to test
+#if EXIV2_TEST_VERSION(0,27,4)
+      if(FIND_EXIF_TAG("Exif.Image.CalibrationIlluminant3")) illu[2] = (dt_dng_illuminant_t) pos->toLong();
+      Exiv2::ExifData::const_iterator cm3_pos = exifData.findKey(Exiv2::ExifKey("Exif.Image.ColorMatrix3"));
+      if((illu[2] != DT_LS_Unknown) && (cm3_pos != exifData.end()) && (cm3_pos->count() == 9))
+      {
+        for(int i = 0; i < 9; i++) colmatrix[2][i] = cm3_pos->toFloat(i);
+      }
+      else
+        illu[2] = DT_LS_Unknown;
+#endif
+      int sel_illu = -1;
+      int sel_temp = 0;
+      const int D65temp = _illu_to_temp(DT_LS_D65);
+      // Which illuminant will be used for the color matrix?
+      // if there is none defined we just leave the matrix marked as undefined
+      // otherwise we take the one closest >= D65
+      for(int i = 0; i < 3; i++)
+      {
+        if((illu[i] != DT_LS_Unknown) && (_illu_to_temp(illu[i]) > sel_temp) && (sel_temp < D65temp))
+        {
+          sel_illu = i;
+          sel_temp = _illu_to_temp(illu[i]);
+        }
+      }
 
-      // Which is the wanted colormatrix?
-      // If we have D65 in Illuminant1 we use it; otherwise we prefer Illuminant2 because it's the higher
-      // color temperature and thus closer to D65
-      if(illu1 == 21 && cm1_pos != exifData.end() && cm1_pos->count() == 9 && cm1_pos->size())
+      if((sel_illu > -1) && (darktable.unmuted & DT_DEBUG_IMAGEIO))
       {
-        for(int i = 0; i < 9; i++) colmatrix[i] = cm1_pos->toFloat(i);
-        illu = illu1;
+        fprintf(stderr, "[exif] `%s` dng illuminant %i (%i°) selected from ", img->filename, illu[sel_illu], _illu_to_temp(illu[sel_illu]));
+        for(int i = 0; i < 3; i++)
+          if(illu[i] != DT_LS_Unknown) fprintf(stderr," -- [%i] %i (%i°)", i + 1, illu[i], _illu_to_temp(illu[i]));
+        fprintf(stderr, "\n");
       }
-      else if(illu2 != -1 && cm2_pos != exifData.end() && cm2_pos->count() == 9 && cm2_pos->size())
-      {
-        for(int i = 0; i < 9; i++) colmatrix[i] = cm2_pos->toFloat(i);
-        illu = illu2;
-      }
-      else if(illu1 != -1 && cm1_pos != exifData.end() && cm1_pos->count() == 9 && cm1_pos->size())
-      {
-        for(int i = 0; i < 9; i++) colmatrix[i] = cm1_pos->toFloat(i);
-        illu = illu1;
-      }
-      // In a few cases we only have one color matrix; it should not be corrected
-      if(illu == -1 && cm1_pos != exifData.end() && cm1_pos->count() == 9 && cm1_pos->size())
-      {
-        for(int i = 0; i < 9; i++) colmatrix[i] = cm1_pos->toFloat(i);
-        illu = 0;
-      }
-
 
       // Take the found CalibrationIlluminant / ColorMatrix pair.
-      // D65 or default: just copy. Otherwise multiply by the specific correction matrix.
-      if(illu != -1)
+      // D65: just copy. Otherwise multiply by the specific correction matrix.
+      if(sel_illu > -1)
       {
        // If no supported Illuminant is found it's better NOT to use the found matrix.
        // The colorin module will write an error message and use a fallback matrix
        // instead of showing wrong colors.
-        switch(illu)
+        switch(illu[sel_illu])
         {
-          case 23:
-            mat3mul(img->d65_color_matrix, correctmat[0], colmatrix);
+          case DT_LS_D50:
+            mat3mul(img->d65_color_matrix, correctmat[0], colmatrix[sel_illu]);
             break;
-          case 20:
-            mat3mul(img->d65_color_matrix, correctmat[1], colmatrix);
+          case DT_LS_D55:
+            mat3mul(img->d65_color_matrix, correctmat[1], colmatrix[sel_illu]);
             break;
-          case 22:
-            mat3mul(img->d65_color_matrix, correctmat[2], colmatrix);
+          case DT_LS_Shade:
+          case DT_LS_D75:
+            mat3mul(img->d65_color_matrix, correctmat[2], colmatrix[sel_illu]);
             break;
-          case 17:
-            mat3mul(img->d65_color_matrix, correctmat[3], colmatrix);
+          case DT_LS_Tungsten:
+          case DT_LS_StandardLightA:
+            mat3mul(img->d65_color_matrix, correctmat[3], colmatrix[sel_illu]);
             break;
-          case 18:
-            mat3mul(img->d65_color_matrix, correctmat[4], colmatrix);
+          case DT_LS_StandardLightB:
+            mat3mul(img->d65_color_matrix, correctmat[4], colmatrix[sel_illu]);
             break;
-          case 19:
-            mat3mul(img->d65_color_matrix, correctmat[5], colmatrix);
+          case DT_LS_StandardLightC:
+            mat3mul(img->d65_color_matrix, correctmat[5], colmatrix[sel_illu]);
             break;
-          case 3:
-            mat3mul(img->d65_color_matrix, correctmat[3], colmatrix);
+          case DT_LS_CoolWhiteFluorescent:
+            mat3mul(img->d65_color_matrix, correctmat[6], colmatrix[sel_illu]);
             break;
-          case 14:
-            mat3mul(img->d65_color_matrix, correctmat[6], colmatrix);
+          case DT_LS_D65:
+            for(int i = 0; i < 9; i++) img->d65_color_matrix[i] = colmatrix[sel_illu][i];
             break;
+
           default:
-            for(int i = 0; i < 9; i++) img->d65_color_matrix[i] = colmatrix[i];
+            fprintf(stderr,"[exif] did not find a proper dng correction matrix for illuminant %i\n", illu[sel_illu]);
             break;
         }
-        // Maybe there is a predefined camera matrix in adobe_coeff?
-        // This is tested to possibly override the matrix.
-        colmatrix[0] = NAN;
-        dt_dcraw_adobe_coeff(img->camera_model, (float(*)[12])colmatrix);
-        if(!isnan(colmatrix[0]))
-          for(int i = 0; i < 9; i++) img->d65_color_matrix[i] = colmatrix[i];
       }
     }
 
@@ -1257,12 +1330,6 @@ static bool _exif_decode_exif_data(dt_image_t *img, Exiv2::ExifData &exifData)
         }
       }
     }
-
-#if EXIV2_MINOR_VERSION < 23
-    // workaround for an exiv2 bug writing random garbage into exif_lens for this camera:
-    // http://dev.exiv2.org/issues/779
-    if(!strcmp(img->exif_model, "DMC-GH2")) snprintf(img->exif_lens, sizeof(img->exif_lens), "(unknown)");
-#endif
 
     // Improve lens detection for Sony SAL lenses.
     if(FIND_EXIF_TAG("Exif.Sony2.LensID") && pos->toLong() != 65535 && pos->print().find('|') == std::string::npos)
@@ -1661,18 +1728,11 @@ int dt_exif_read_blob(uint8_t **buf, const char *path, const int imgid, const in
         // Olympus thumbnail data
         "Exif.Olympus.Thumbnail",
         "Exif.Olympus.ThumbnailOffset",
-        "Exif.Olympus.ThumbnailLength"
+        "Exif.Olympus.ThumbnailLength",
 
         "Exif.Image.BaselineExposureOffset",
-        };
-      static const guint n_keys = G_N_ELEMENTS(keys);
-      dt_remove_exif_keys(exifData, keys, n_keys);
-    }
-#if EXIV2_MINOR_VERSION >= 23
-    {
-      // Exiv2 versions older than 0.23 drop all EXIF if the code below is executed
-      // Samsung makernote cleanup, the entries below have no relevance for exported images
-      static const char *keys[] = {
+
+         // Samsung makernote cleanup, the entries below have no relevance for exported images
         "Exif.Samsung2.SensorAreas",
         "Exif.Samsung2.ColorSpace",
         "Exif.Samsung2.EncryptionKey",
@@ -1692,7 +1752,6 @@ int dt_exif_read_blob(uint8_t **buf, const char *path, const int imgid, const in
       static const guint n_keys = G_N_ELEMENTS(keys);
       dt_remove_exif_keys(exifData, keys, n_keys);
     }
-#endif
 
       static const char *dngkeys[] = {
         // Embedded color profile info
@@ -1783,9 +1842,12 @@ int dt_exif_read_blob(uint8_t **buf, const char *path, const int imgid, const in
           exifData["Exif.Photo.UserComment"] = desc;
         g_list_free_full(res, &g_free);
       }
+#if EXIV2_TEST_VERSION(0,27,4)
       else
         // mandatory tag for TIFF/EP and recommended for Exif, empty is ok (unknown)
+        // but correctly written only by exiv2 >= 0.27.4
         exifData["Exif.Image.ImageDescription"] = "";
+#endif
 
       res = dt_metadata_get(imgid, "Xmp.dc.rights", NULL);
       if(res != NULL)
@@ -1793,9 +1855,12 @@ int dt_exif_read_blob(uint8_t **buf, const char *path, const int imgid, const in
         exifData["Exif.Image.Copyright"] = (char *)res->data;
         g_list_free_full(res, &g_free);
       }
+#if EXIV2_TEST_VERSION(0,27,4)
       else
         // mandatory tag for TIFF/EP and optional for Exif, empty is ok (unknown)
+        // but correctly written only by exiv2 >= 0.27.4
         exifData["Exif.Image.Copyright"] = "";
+#endif
 
       res = dt_metadata_get(imgid, "Xmp.xmp.Rating", NULL);
       if(res != NULL)
@@ -3701,7 +3766,7 @@ static void _exif_xmp_read_data_export(Exiv2::XmpData &xmpData, const int imgid,
   g_free(iop_order_list);
 }
 
-#if EXIV2_VERSION >= EXIV2_MAKE_VERSION(0,27,0)
+#if EXIV2_TEST_VERSION(0,27,0)
 #define ERROR_CODE(a) (static_cast<Exiv2::ErrorCode>((a)))
 #else
 #define ERROR_CODE(a) (a)
@@ -3811,6 +3876,19 @@ static void dt_remove_exif_key(Exiv2::ExifData &exif, const char *key)
   }
 }
 
+static void dt_remove_iptc_key(Exiv2::IptcData &iptc, const char *key)
+{
+  try
+  {
+    Exiv2::IptcData::iterator pos;
+    while((pos = iptc.findKey(Exiv2::IptcKey(key))) != iptc.end())
+      iptc.erase(pos);
+  }
+  catch(Exiv2::AnyError &e)
+  {
+  }
+}
+
 int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metadata)
 {
   dt_export_metadata_t *m = (dt_export_metadata_t *)metadata;
@@ -3898,7 +3976,7 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
       dt_variables_params_t *params;
       dt_variables_params_init(&params);
       params->filename = input_filename;
-      params->jobcode = "export";
+      params->jobcode = "infos";
       params->sequence = 0;
       params->imgid = imgid;
 
@@ -3948,8 +4026,10 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
                 const char *type = _exif_get_exiv2_tag_type(tagname);
                 if(!g_strcmp0(type, "String-R"))
                 {
+                  // clean up the original tags before giving new values
+                  dt_remove_iptc_key(iptcData, tagname);
                   // convert the input list (separator ", ") into different tags
-                  // FIXME if an element of the list contains a ", " it is not correctly expeorted
+                  // FIXME if an element of the list contains a ", " it is not correctly exported
                   Exiv2::IptcKey key(tagname);
                   Exiv2::Iptcdatum id(key);
                   gchar **values = g_strsplit(result, ", ", 0);
@@ -3972,7 +4052,28 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
                 else iptcData[tagname] = result;
               }
               else if(g_str_has_prefix(tagname, "Exif."))
+              {
+                const char *type = _exif_get_exiv2_tag_type(tagname);
+                if((!g_strcmp0(type, "Rational") || !g_strcmp0(type, "SRational")) &&
+                   (g_strstr_len(result, strlen(result), "/") == NULL))
+                {
+                  float float_value = (float)std::atof(result);
+                  if(!std::isnan(float_value))
+                  {
+                    g_free(result);
+                    int int_value = (int)float_value;
+                    int divisor = 1;
+                    while(fabs(float_value - int_value) > 0.000001)
+                    {
+                      divisor *= 10;
+                      float_value *= 10.0;
+                      int_value = (int)float_value;
+                    }
+                    result = g_strdup_printf("%d/%d", (int)float_value, divisor);
+                  }
+                }
                 exifData[tagname] = result;
+              }
             }
             g_free(result);
           }
@@ -3983,6 +4084,8 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
             dt_remove_xmp_key(xmpData, tagname);
           else if (g_str_has_prefix(tagname, "Exif."))
             dt_remove_exif_key(exifData, tagname);
+          else if (g_str_has_prefix(tagname, "Iptc."))
+            dt_remove_iptc_key(iptcData, tagname);
         }
       }
       dt_variables_params_destroy(params);
@@ -3994,7 +4097,7 @@ int dt_exif_xmp_attach_export(const int imgid, const char *filename, void *metad
     }
     catch(Exiv2::AnyError &e)
     {
-#if EXIV2_VERSION >= EXIV2_MAKE_VERSION(0,27,0)
+#if EXIV2_TEST_VERSION(0,27,0)
       if(e.code() == Exiv2::kerTooLargeJpegSegment)
 #else
       if(e.code() == 37)
@@ -4110,8 +4213,8 @@ int dt_exif_xmp_write(const int imgid, const char *filename)
       {
         fprintf(stderr, "cannot write xmp file '%s': '%s'\n", filename, strerror(errno));
         dt_control_log(_("cannot write xmp file '%s': '%s'"), filename, strerror(errno));
+        return -1;
       }
-
     }
 
     return 0;

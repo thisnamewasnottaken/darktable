@@ -722,15 +722,15 @@ colorbalance_cdl (read_only image2d_t in, write_only image2d_t out, const int wi
 }
 
 
-inline float sqf(const float x)
+static inline float sqf(const float x)
 {
   return x * x;
 }
 
 
-inline float4 opacity_masks(const float x,
-                            const float shadows_weight, const float highlights_weight,
-                            const float midtones_weight, const float mask_grey_fulcrum)
+static inline float4 opacity_masks(const float x,
+                                   const float shadows_weight, const float highlights_weight,
+                                   const float midtones_weight, const float mask_grey_fulcrum)
 {
   float4 output;
   const float x_offset = (x - mask_grey_fulcrum);
@@ -750,7 +750,7 @@ inline float4 opacity_masks(const float x,
 
 #define LUT_ELEM 360 // gamut LUT number of elements: resolution of 1°
 
-inline float lookup_gamut(read_only image2d_t gamut_lut, const float x)
+static inline float lookup_gamut(read_only image2d_t gamut_lut, const float x)
 {
   // WARNING : x should be between [-pi ; pi ], which is the default output of atan2 anyway
 
@@ -787,7 +787,7 @@ inline float lookup_gamut(read_only image2d_t gamut_lut, const float x)
 }
 
 
-inline float soft_clip(const float x, const float soft_threshold, const float hard_threshold)
+static inline float soft_clip(const float x, const float soft_threshold, const float hard_threshold)
 {
   // use an exponential soft clipping above soft_threshold
   // hard threshold must be > soft threshold
@@ -947,10 +947,12 @@ colorbalancergb (read_only image2d_t in, write_only image2d_t out,
 
   // Gamut mapping
   const float out_max_sat_h = lookup_gamut(gamut_lut, h);
-  float sat = (JC[0] > 0.f) ? JC[1] / JC[0] : 0.f;
-  sat = soft_clip(sat, 0.8f * out_max_sat_h, out_max_sat_h);
+  // if JC[0] == 0.f, the saturation / luminance ratio is infinite - assign the largest practical value we have
+  const float sat = (JC[0] > 0.f) ? soft_clip(JC[1] / JC[0], 0.8f * out_max_sat_h, out_max_sat_h)
+                                  : out_max_sat_h;
   const float max_C_at_sat = JC[0] * sat;
-  const float max_J_at_sat = (sat > 0.f) ? JC[1] / sat : 0.f;
+  // if sat == 0.f, the chroma is zero - assign the original luminance because there's no need to gamut map
+  const float max_J_at_sat = (sat > 0.f) ? JC[1] / sat : JC[0];
   JC[0] = (JC[0] + max_J_at_sat) / 2.f;
   JC[1] = (JC[1] + max_C_at_sat) / 2.f;
 
@@ -964,6 +966,7 @@ colorbalancergb (read_only image2d_t in, write_only image2d_t out,
   const float d = -0.56f;
   float Iz = JC[0] + d0;
   Iz /= (1.f + d - d * Iz);
+  Iz = fmax(Iz, 0.f);
 
   const float4 AI[3] = { {  1.0f,  0.1386050432715393f,  0.0580473161561189f, 0.0f },
                          {  1.0f, -0.1386050432715393f, -0.0580473161561189f, 0.0f },

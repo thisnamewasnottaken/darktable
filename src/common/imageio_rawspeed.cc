@@ -22,6 +22,9 @@
 
 #include "RawSpeed-API.h"
 
+#define TYPE_FLOAT32 RawImageType::F32
+#define TYPE_USHORT16 RawImageType::UINT16
+
 #include <memory>
 
 #define __STDC_LIMIT_MACROS
@@ -34,6 +37,7 @@ extern "C" {
 #include "common/imageio_rawspeed.h"
 #include "imageio.h"
 #include "common/tags.h"
+#include "develop/imageop.h"
 #include <stdint.h>
 }
 
@@ -69,11 +73,11 @@ static void dt_rawspeed_load_meta() {
   }
 }
 
-void dt_rawspeed_lookup_makermodel(const char *maker, const char *model,
+gboolean dt_rawspeed_lookup_makermodel(const char *maker, const char *model,
                                    char *mk, int mk_len, char *md, int md_len,
                                    char *al, int al_len)
 {
-  int got_it_done = FALSE;
+  gboolean got_it_done = FALSE;
   try {
     dt_rawspeed_load_meta();
     const Camera *cam = meta->getCamera(maker, model, "");
@@ -101,6 +105,7 @@ void dt_rawspeed_lookup_makermodel(const char *maker, const char *model,
     g_strlcpy(md, model, md_len);
     g_strlcpy(al, model, al_len);
   }
+  return got_it_done;
 }
 
 uint32_t dt_rawspeed_crop_dcraw_filters(uint32_t filters, uint32_t crop_x, uint32_t crop_y)
@@ -110,9 +115,27 @@ uint32_t dt_rawspeed_crop_dcraw_filters(uint32_t filters, uint32_t crop_x, uint3
   return ColorFilterArray::shiftDcrawFilter(filters, crop_x, crop_y);
 }
 
+// CR3 files are for now handled by LibRAW, we do not want rawspeed to try to open them
+// as this issues lot of error message on the console.
+static gboolean _ignore_image(const gchar *filename)
+{
+  const char *extensions_whitelist[] = { "cr3", NULL };
+  char *ext = g_strrstr(filename, ".");
+  if(!ext) return FALSE;
+  ext++;
+  for(const char **i = extensions_whitelist; *i != NULL; i++)
+    if(!g_ascii_strncasecmp(ext, *i, strlen(*i)))
+    {
+      return TRUE;
+    }
+  return FALSE;
+}
+
 dt_imageio_retval_t dt_imageio_open_rawspeed(dt_image_t *img, const char *filename,
                                              dt_mipmap_buffer_t *mbuf)
 {
+  if(_ignore_image(filename)) return DT_IMAGEIO_FILE_CORRUPTED;
+
   if(!img->exif_inited) (void)dt_exif_read(img, filename);
 
   char filen[PATH_MAX] = { 0 };
@@ -130,7 +153,7 @@ dt_imageio_retval_t dt_imageio_open_rawspeed(dt_image_t *img, const char *filena
     m = f.readFile();
     dt_pthread_mutex_unlock(&darktable.readFile_mutex);
 
-    RawParser t(m.get());
+    RawParser t(*m.get());
     d = t.getDecoder(meta);
 
     if(!d.get()) return DT_IMAGEIO_FILE_CORRUPTED;
@@ -316,12 +339,17 @@ dt_imageio_retval_t dt_imageio_open_rawspeed(dt_image_t *img, const char *filena
         for(int i = 0; i < 6; ++i)
           for(int j = 0; j < 6; ++j)
           {
-            img->buf_dsc.xtrans[j][i] = r->cfa.getColorAt(i % 6, j % 6);
+            img->buf_dsc.xtrans[j][i] = (uint8_t)r->cfa.getColorAt(i % 6, j % 6);
           }
       }
     }
     // if buf is NULL, we quit the fct here
-    if(!mbuf) return DT_IMAGEIO_OK;
+    if(!mbuf)
+    {
+      img->buf_dsc.cst = iop_cs_RAW;
+      img->loader = LOADER_RAWSPEED;
+      return DT_IMAGEIO_OK;
+    }
 
     void *buf = dt_mipmap_cache_alloc(mbuf, img);
     if(!buf) return DT_IMAGEIO_CACHE_FULL;
@@ -360,6 +388,8 @@ dt_imageio_retval_t dt_imageio_open_rawspeed(dt_image_t *img, const char *filena
     return DT_IMAGEIO_FILE_CORRUPTED;
   }
 
+  img->buf_dsc.cst = iop_cs_RAW;
+  img->loader = LOADER_RAWSPEED;
   return DT_IMAGEIO_OK;
 }
 
@@ -376,13 +406,19 @@ dt_imageio_retval_t dt_imageio_open_rawspeed_sraw(dt_image_t *img, RawImage r, d
   img->buf_dsc.channels = 4;
   img->buf_dsc.datatype = TYPE_FLOAT;
 
-  if(r->getDataType() != TYPE_USHORT16 && r->getDataType() != TYPE_FLOAT32) return DT_IMAGEIO_FILE_CORRUPTED;
+  if(r->getDataType() != TYPE_USHORT16 && r->getDataType() != TYPE_FLOAT32)
+    return DT_IMAGEIO_FILE_CORRUPTED;
 
   const uint32_t cpp = r->getCpp();
   if(cpp != 1 && cpp != 3 && cpp != 4) return DT_IMAGEIO_FILE_CORRUPTED;
 
   // if buf is NULL, we quit the fct here
-  if(!mbuf) return DT_IMAGEIO_OK;
+  if(!mbuf)
+  {
+    img->buf_dsc.cst = iop_cs_RAW;
+    img->loader = LOADER_RAWSPEED;
+    return DT_IMAGEIO_OK;
+  }
 
   if(cpp == 1) img->flags |= DT_IMAGE_MONOCHROME;
 
@@ -482,6 +518,8 @@ dt_imageio_retval_t dt_imageio_open_rawspeed_sraw(dt_image_t *img, RawImage r, d
     }
   }
 
+  img->buf_dsc.cst = iop_cs_RAW;
+  img->loader = LOADER_RAWSPEED;
   return DT_IMAGEIO_OK;
 }
 

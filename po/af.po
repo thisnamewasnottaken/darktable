@@ -5,11 +5,14 @@
 # >> https://rieme.co.za/
 # >> https://github.com/casperl/Afrikaanse-rekenaarterme
 #
+#: ../build/bin/conf_gen.h:786 ../build/bin/conf_gen.h:792
+#: ../build/bin/conf_gen.h:798 ../build/bin/conf_gen.h:804
+#: ../build/bin/conf_gen.h:810
 msgid ""
 msgstr ""
 "Project-Id-Version: darktable\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-06-13 18:38+0200\n"
+"POT-Creation-Date: 2021-06-15 08:50+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: thisnamewasnottaken <8645373+thisnamewasnottaken@users."
 "noreply.github.com>\n"
@@ -2962,7 +2965,7 @@ msgstr "edge opsporing radius"
 #: ../build/lib/darktable/plugins/introspection_defringe.c:106
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:219
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:418
-#: ../src/iop/bloom.c:403 ../src/iop/colorbalancergb.c:1762
+#: ../src/iop/bloom.c:403 ../src/iop/colorbalancergb.c:1873
 #: ../src/iop/colorreconstruction.c:1284 ../src/iop/hotpixels.c:376
 #: ../src/iop/sharpen.c:729
 msgid "threshold"
@@ -11536,7 +11539,7 @@ msgid "RGBL"
 msgstr "RGBL"
 
 #. Page master
-#: ../src/iop/colorbalance.c:1902 ../src/iop/colorbalancergb.c:1508
+#: ../src/iop/colorbalance.c:1902 ../src/iop/colorbalancergb.c:1619
 msgid "master"
 msgstr "meester"
 
@@ -11648,64 +11651,72 @@ msgstr ""
 msgid "add basic colorfulness"
 msgstr "voeg basieses kleurrykheid"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:712
+=======
+#: ../src/iop/colorbalancergb.c:809
+>>>>>>> master
 msgid "colorbalance works only on RGB input"
 msgstr "kleurbalans works slegs met RGB inset"
 
-#: ../src/iop/colorbalancergb.c:1147 ../src/iop/colorzones.c:2218
+#: ../src/iop/colorbalancergb.c:1258 ../src/iop/colorzones.c:2218
 #: ../src/iop/retouch.c:1817 ../src/iop/toneequal.c:1838
 msgid "cannot display masks when the blending mask is displayed"
 msgstr "kan nie maskers vertoon wanneer die vermengingsmasker vertoon word nie"
 
-#: ../src/iop/colorbalancergb.c:1508
+#: ../src/iop/colorbalancergb.c:1619
 msgid "global grading"
 msgstr "globale gradering"
 
-#: ../src/iop/colorbalancergb.c:1514
+#: ../src/iop/colorbalancergb.c:1625
 msgid "rotate all hues by an angle, at the same luminance"
 msgstr "roteer alle kleure teen 'n hoek, by dieselfde luminansie"
 
-#: ../src/iop/colorbalancergb.c:1521
+#: ../src/iop/colorbalancergb.c:1632
 msgid "increase colorfulness mostly on low-chroma colors"
 msgstr "verhoog kleurvolheid meestal op lae-chroma kleure"
 
-#: ../src/iop/colorbalancergb.c:1528
+#: ../src/iop/colorbalancergb.c:1639
 msgid "increase the contrast at constant chromaticity"
 msgstr "verhoog die kontras teen konstante chromatiteit"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1530
+=======
+#: ../src/iop/colorbalancergb.c:1641
+>>>>>>> master
 msgid "linear chroma grading"
 msgstr "linieëre chroma gradering"
 
-#: ../src/iop/colorbalancergb.c:1537
+#: ../src/iop/colorbalancergb.c:1648
 msgid "increase colorfulness at same luminance globally"
 msgstr "globale vermeerder kleurrykheid teen dieselfde luminansie"
 
-#: ../src/iop/colorbalancergb.c:1543
+#: ../src/iop/colorbalancergb.c:1654
 msgid "increase colorfulness at same luminance mostly in shadows"
 msgstr ""
 "vermeerder kleurrykheid teen dieselfde luminansie meestal in die skadus"
 
-#: ../src/iop/colorbalancergb.c:1549
+#: ../src/iop/colorbalancergb.c:1660
 msgid "increase colorfulness at same luminance mostly in midtones"
 msgstr ""
 "vermeerder kleurryjheid teen dieselfde luminiansie meestal in middetone"
 
-#: ../src/iop/colorbalancergb.c:1555
+#: ../src/iop/colorbalancergb.c:1666
 msgid "increase colorfulness at same luminance mostly in highlights"
 msgstr ""
 "vermeerder kleurryjheid teen dieselfde luminiansie meestal in hoogtepunte"
 
-#: ../src/iop/colorbalancergb.c:1557
+#: ../src/iop/colorbalancergb.c:1668
 msgid "perceptual saturation grading"
 msgstr "perseptuele versadiging gradering"
 
-#: ../src/iop/colorbalancergb.c:1564
+#: ../src/iop/colorbalancergb.c:1675
 msgid "add or remove saturation by an absolute amount"
 msgstr "voeg versadiging by of verwyder deur 'n absolute hoeveelheid"
 
-#: ../src/iop/colorbalancergb.c:1571 ../src/iop/colorbalancergb.c:1578
-#: ../src/iop/colorbalancergb.c:1585
+#: ../src/iop/colorbalancergb.c:1682 ../src/iop/colorbalancergb.c:1689
+#: ../src/iop/colorbalancergb.c:1696
 msgid ""
 "increase or decrease saturation proportionally to the original pixel "
 "saturation"
@@ -11713,16 +11724,25 @@ msgstr ""
 "versadiging eweredig aan die oorspronklike pixel versadiging verhoog of "
 "verminder"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1588
+=======
+#: ../src/iop/colorbalancergb.c:1699
+>>>>>>> master
 msgid "perceptual brilliance grading"
 msgstr "perseptuele versadiging gradering"
 
-#: ../src/iop/colorbalancergb.c:1595
+#: ../src/iop/colorbalancergb.c:1706
 msgid "add or remove brilliance by an absolute amount"
 msgstr "voeg briljantheid by of verwyder deur 'n absolute bedrag"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1602 ../src/iop/colorbalancergb.c:1609
 #: ../src/iop/colorbalancergb.c:1616
+=======
+#: ../src/iop/colorbalancergb.c:1713 ../src/iop/colorbalancergb.c:1720
+#: ../src/iop/colorbalancergb.c:1727
+>>>>>>> master
 msgid ""
 "increase or decrease brilliance proportionally to the original pixel "
 "brilliance"
@@ -11731,34 +11751,39 @@ msgstr ""
 "te verminder"
 
 #. Page 4-ways
-#: ../src/iop/colorbalancergb.c:1620
+#: ../src/iop/colorbalancergb.c:1731
 msgid "4 ways"
 msgstr "4 maniere"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1620
+=======
+#: ../src/iop/colorbalancergb.c:1731
+>>>>>>> master
 msgid "selective color grading"
 msgstr "selektiewe kleur gradering"
 
-#: ../src/iop/colorbalancergb.c:1622
+#: ../src/iop/colorbalancergb.c:1733
 msgid "global offset"
 msgstr "globale verreken"
 
-#: ../src/iop/colorbalancergb.c:1629
+#: ../src/iop/colorbalancergb.c:1740
 msgid "global luminance offset"
 msgstr "globale luminasie verreken"
 
-#: ../src/iop/colorbalancergb.c:1636
+#: ../src/iop/colorbalancergb.c:1747
 msgid "hue of the global color offset"
 msgstr "kleur van die globale kleur verreken"
 
-#: ../src/iop/colorbalancergb.c:1643
+#: ../src/iop/colorbalancergb.c:1754
 msgid "chroma of the global color offset"
 msgstr "chroma van die globale kleur verreken"
 
-#: ../src/iop/colorbalancergb.c:1645
+#: ../src/iop/colorbalancergb.c:1756
 msgid "shadows lift"
 msgstr "skadus verlig"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1652
 msgid "luminance gain in shadows"
 msgstr "luminansie wins in skadus"
@@ -11768,13 +11793,25 @@ msgid "hue of the color gain in shadows"
 msgstr "kleur van die kleur verrekining in skadus"
 
 #: ../src/iop/colorbalancergb.c:1667
+=======
+#: ../src/iop/colorbalancergb.c:1763
+msgid "luminance gain in shadows"
+msgstr "luminansie wins in skadus"
+
+#: ../src/iop/colorbalancergb.c:1770
+msgid "hue of the color gain in shadows"
+msgstr "kleur van die kleur verrekining in skadus"
+
+#: ../src/iop/colorbalancergb.c:1778
+>>>>>>> master
 msgid "chroma of the color gain in shadows"
 msgstr "chroma van die kleur verreken in skadus"
 
-#: ../src/iop/colorbalancergb.c:1669
+#: ../src/iop/colorbalancergb.c:1780
 msgid "highlights gain"
 msgstr "hoogtepunte wins"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1676
 msgid "luminance gain in highlights"
 msgstr "luminansie wins-helling in hoogtepunte"
@@ -11784,75 +11821,110 @@ msgid "hue of the color gain in highlights"
 msgstr "kleur van kleur verstelling in hoogtepunte"
 
 #: ../src/iop/colorbalancergb.c:1691
+=======
+#: ../src/iop/colorbalancergb.c:1787
+msgid "luminance gain in highlights"
+msgstr "luminansie wins-helling in hoogtepunte"
+
+#: ../src/iop/colorbalancergb.c:1794
+msgid "hue of the color gain in highlights"
+msgstr "kleur van kleur verstelling in hoogtepunte"
+
+#: ../src/iop/colorbalancergb.c:1802
+>>>>>>> master
 msgid "chroma of the color gain in highlights"
 msgstr "chroma of die kleur wins in hoogtepunte"
 
-#: ../src/iop/colorbalancergb.c:1693
+#: ../src/iop/colorbalancergb.c:1804
 msgid "power"
 msgstr "krag"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1700
+=======
+#: ../src/iop/colorbalancergb.c:1811
+>>>>>>> master
 msgid "luminance exponent in midtones"
 msgstr "luminansie van die kleur eksponent in midtones"
 
-#: ../src/iop/colorbalancergb.c:1707
+#: ../src/iop/colorbalancergb.c:1818
 msgid "hue of the color exponent in midtones"
 msgstr "kleur van die kleur eksponent in midtones"
 
-#: ../src/iop/colorbalancergb.c:1715
+#: ../src/iop/colorbalancergb.c:1826
 msgid "chroma of the color exponent in midtones"
 msgstr "chroma van die kleur eksponent in midtones"
 
 #. Page masks
-#: ../src/iop/colorbalancergb.c:1718
+#: ../src/iop/colorbalancergb.c:1829
 msgid "masks"
 msgstr "maskers"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1718
 msgid "isolate luminances"
 msgstr "isoleer luminansies"
 
 #: ../src/iop/colorbalancergb.c:1720
+=======
+#: ../src/iop/colorbalancergb.c:1829
+msgid "isolate luminances"
+msgstr "isoleer luminansies"
+
+#: ../src/iop/colorbalancergb.c:1831
+>>>>>>> master
 msgid "luminance ranges"
 msgstr "luminansie reekse"
 
-#: ../src/iop/colorbalancergb.c:1734
+#: ../src/iop/colorbalancergb.c:1845
 msgid "weight of the shadows over the whole tonal range"
 msgstr "gewig van die skaduwees oor die hele tonale reeks"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1745
+=======
+#: ../src/iop/colorbalancergb.c:1856
+>>>>>>> master
 msgid "position of the middle-gray reference for masking"
 msgstr "posisie van die middelgrys verwysing vir maskering"
 
-#: ../src/iop/colorbalancergb.c:1756
+#: ../src/iop/colorbalancergb.c:1867
 msgid "weights of highlights over the whole tonal range"
 msgstr "gewigte van hoogtepunte oor die hele tonale reeks"
 
-#: ../src/iop/colorbalancergb.c:1769
+#: ../src/iop/colorbalancergb.c:1880
 msgid "peak white luminance value used to normalize the power function"
 msgstr "top wit luminansie waarde gebruik om die krag funskie te normaliseer"
 
-#: ../src/iop/colorbalancergb.c:1777
+#: ../src/iop/colorbalancergb.c:1888
 msgid "peak gray luminance value used to normalize the power function"
 msgstr "top grys luminansie waarde gebruik om die krag funskie te normaliseer"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1779
+=======
+#: ../src/iop/colorbalancergb.c:1890
+>>>>>>> master
 msgid "mask preview settings"
 msgstr "masker voorskou instellings"
 
-#: ../src/iop/colorbalancergb.c:1782
+#: ../src/iop/colorbalancergb.c:1893
 msgid "checkerboard color 1"
 msgstr "checkerboard kleur 1"
 
+<<<<<<< HEAD
 #: ../src/iop/colorbalancergb.c:1785 ../src/iop/colorbalancergb.c:1794
+=======
+#: ../src/iop/colorbalancergb.c:1896 ../src/iop/colorbalancergb.c:1905
+>>>>>>> master
 msgid "select color of the checkerboard from a swatch"
 msgstr "kies kleur van verligte uit 'n swatch"
 
-#: ../src/iop/colorbalancergb.c:1791
+#: ../src/iop/colorbalancergb.c:1902
 msgid "checkerboard color 2"
 msgstr "checkerboard kleur 2"
 
-#: ../src/iop/colorbalancergb.c:1801
+#: ../src/iop/colorbalancergb.c:1912
 msgid "checkerboard size"
 msgstr "checkerboard grootte"
 

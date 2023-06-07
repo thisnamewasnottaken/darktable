@@ -112,7 +112,9 @@ static int32_t dt_styles_get_id_by_name(const char *name);
 
 gboolean dt_styles_exists(const char *name)
 {
-  return (dt_styles_get_id_by_name(name)) != 0 ? TRUE : FALSE;
+  if(name)
+    return (dt_styles_get_id_by_name(name)) != 0 ? TRUE : FALSE;
+  return FALSE;
 }
 
 static void _dt_style_cleanup_multi_instance(int id)
@@ -260,6 +262,7 @@ static void _dt_style_update_from_image(int id, int imgid, GList *filter, GList 
     char tmp[500];
     char *fields[] = { "op_params",       "module",         "enabled",    "blendop_params",
                        "blendop_version", "multi_priority", "multi_name", 0 };
+
     do
     {
       query[0] = '\0';
@@ -272,27 +275,28 @@ static void _dt_style_update_from_image(int id, int imgid, GList *filter, GList 
         for(int k = 0; fields[k]; k++)
         {
           if(k != 0) g_strlcat(query, ",", sizeof(query));
-          snprintf(tmp, sizeof(tmp), "%s=(SELECT %s FROM main.history WHERE imgid=%d AND num=%d)", fields[k],
-                   fields[k], imgid, GPOINTER_TO_INT(list->data));
+          snprintf(tmp, sizeof(tmp),
+                   "%s=(SELECT %s FROM main.history WHERE imgid=%d AND num=%d)",
+                   fields[k], fields[k], imgid, GPOINTER_TO_INT(upd->data));
           g_strlcat(query, tmp, sizeof(query));
         }
         snprintf(tmp, sizeof(tmp), " WHERE styleid=%d AND data.style_items.num=%d", id,
-                 GPOINTER_TO_INT(upd->data));
+                 GPOINTER_TO_INT(list->data));
         g_strlcat(query, tmp, sizeof(query));
       }
       // update only, so we want to insert the new style item
       else if(GPOINTER_TO_INT(upd->data) != -1)
         snprintf(query, sizeof(query),
                  "INSERT INTO data.style_items "
-                 "  (styleid,num,module,operation,op_params,enabled,blendop_params,"
-                 "   blendop_version,multi_priority,multi_name)"
+                 "  (styleid, num, module, operation, op_params, enabled, blendop_params,"
+                 "   blendop_version, multi_priority, multi_name)"
                  " SELECT %d,"
                  "    (SELECT num+1 "
                  "     FROM data.style_items"
                  "     WHERE styleid=%d"
                  "     ORDER BY num DESC LIMIT 1), "
-                 "   module,operation,op_params,enabled,blendop_params,blendop_version,"
-                 "   multi_priority,multi_name"
+                 "   module, operation, op_params, enabled, blendop_params, blendop_version,"
+                 "   multi_priority, multi_name"
                  " FROM main.history"
                  " WHERE imgid=%d AND num=%d",
                  id, id, imgid, GPOINTER_TO_INT(upd->data));
@@ -399,22 +403,19 @@ void dt_styles_update(const char *name, const char *newname, const char *newdesc
 
   dt_styles_save_to_file(newname, stylesdir, TRUE);
 
-  /* delete old accelerator and create a new one */
-  // TODO: should better use dt_accel_rename_global() to keep the old accel_key untouched, but it seems to be
-  // buggy
   if(g_strcmp0(name, newname))
   {
-    char tmp_accel[1024];
-    snprintf(tmp_accel, sizeof(tmp_accel), C_("accel", "styles/apply %s"), name);
-    dt_accel_deregister_global(tmp_accel);
+    gchar *old_name = g_strdup_printf(C_("accel", "styles/apply %s"), name);
+    gchar *new_name = g_strdup_printf(C_("accel", "apply %s"), newname); // don't include full path
 
-    gchar *tmp_name = g_strdup(newname); // freed by _destroy_style_shortcut_callback
-    snprintf(tmp_accel, sizeof(tmp_accel), C_("accel", "styles/apply %s"), newname);
-    dt_accel_register_global(tmp_accel, 0, 0);
-    GClosure *closure;
-    closure = g_cclosure_new(G_CALLBACK(_apply_style_shortcut_callback), tmp_name,
-                             _destroy_style_shortcut_callback);
-    dt_accel_connect_global(tmp_accel, closure);
+    // change closure first, with full old path
+    GClosure *closure = g_cclosure_new(G_CALLBACK(_apply_style_shortcut_callback), g_strdup(newname),
+                                       _destroy_style_shortcut_callback);
+    dt_accel_connect_global(old_name, closure);
+
+    dt_accel_rename_global(old_name, new_name);
+    g_free(old_name);
+    g_free(new_name);
   }
 
   DT_DEBUG_CONTROL_SIGNAL_RAISE(darktable.signals, DT_SIGNAL_STYLE_CHANGED);
@@ -637,8 +638,14 @@ void dt_styles_apply_to_list(const char *name, const GList *list, gboolean dupli
 
   DT_DEBUG_CONTROL_SIGNAL_RAISE(darktable.signals, DT_SIGNAL_TAG_CHANGED);
 
-  if(!selected) dt_control_log(_("no image selected!"));
-  dt_control_log(_("style %s successfully applied!"), name);
+  if(!selected)
+  {
+    dt_control_log(_("no image selected!"));
+  }
+  else
+  {
+    dt_control_log(_("style %s successfully applied!"), name);
+  }
 }
 
 void dt_multiple_styles_apply_to_list(GList *styles, const GList *list, gboolean duplicate)
@@ -991,7 +998,7 @@ void dt_styles_delete_by_name_adv(const char *name, const gboolean raise)
 
     char tmp_accel[1024];
     snprintf(tmp_accel, sizeof(tmp_accel), C_("accel", "styles/apply %s"), name);
-    dt_accel_deregister_global(tmp_accel);
+    dt_accel_rename_global(tmp_accel, NULL);
 
     if(raise)
       DT_DEBUG_CONTROL_SIGNAL_RAISE(darktable.signals, DT_SIGNAL_STYLE_CHANGED);
@@ -1027,8 +1034,9 @@ GList *dt_styles_get_item_list(const char *name, gboolean params, int imgid)
           "SELECT num, multi_priority, module, operation, enabled,"
           "       (SELECT MAX(num)"
           "        FROM main.history"
-          "        WHERE imgid=?2 AND operation=data.style_items.operation"
-          "        GROUP BY multi_priority),"
+          "        WHERE imgid=?2 "
+          "          AND operation=data.style_items.operation"
+          "          AND multi_priority=data.style_items.multi_priority),"
           "       0, multi_name, blendop_version"
           " FROM data.style_items"
           " WHERE styleid=?1"
@@ -1554,7 +1562,7 @@ static int32_t dt_styles_get_id_by_name(const char *name)
   return id;
 }
 
-void init_styles_key_accels()
+void dt_init_styles_key_accels()
 {
   GList *result = dt_styles_get_list("");
   if(result)
@@ -1570,7 +1578,7 @@ void init_styles_key_accels()
   }
 }
 
-void connect_styles_key_accels()
+void dt_connect_styles_key_accels()
 {
   GList *result = dt_styles_get_list("");
   if(result)

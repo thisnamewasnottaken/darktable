@@ -33,27 +33,24 @@ msgid "last instance"
 msgstr "laaste geval"
 
 #: ../build/bin/conf_gen.h:179 ../build/bin/preferences_gen.h:4244
-#, fuzzy
 msgctxt "preferences"
 msgid "triangle"
-msgstr "invalshoek"
+msgstr "driehoek"
 
 #: ../build/bin/conf_gen.h:180
-#, fuzzy
 msgctxt "preferences"
 msgid "circle"
-msgstr "voeg sirkel by"
+msgstr "sirkel"
 
 #: ../build/bin/conf_gen.h:181
 msgctxt "preferences"
 msgid "diamond"
-msgstr ""
+msgstr "ruit"
 
 #: ../build/bin/conf_gen.h:182
-#, fuzzy
 msgctxt "preferences"
 msgid "bar"
-msgstr "sleg"
+msgstr "balk"
 
 #: ../build/bin/conf_gen.h:231 ../build/bin/conf_gen.h:359
 #: ../build/bin/conf_gen.h:370 ../build/bin/conf_gen.h:1527
@@ -2204,9 +2201,8 @@ msgid "shortcuts with multiple instances"
 msgstr "sleutelbordkortpaaie met verskeie instansies"
 
 #: ../build/bin/preferences_gen.h:4427
-#, fuzzy
 msgid "prefer focused instance"
-msgstr "verkies ongemaskeerde gevalle"
+msgstr "verkies gefokusde geval"
 
 #: ../build/bin/preferences_gen.h:4435
 #, fuzzy
@@ -2755,9 +2751,8 @@ msgstr "dinamiese omvang skaal"
 
 #: ../build/lib/darktable/plugins/introspection_agx.c:293
 #: ../build/lib/darktable/plugins/introspection_agx.c:530
-#, fuzzy
 msgid "pivot relative exposure"
-msgstr "wit relatiewe blootstelling"
+msgstr "spil relatiewe blootstelling"
 
 #: ../build/lib/darktable/plugins/introspection_agx.c:299
 #: ../build/lib/darktable/plugins/introspection_agx.c:534
@@ -4325,9 +4320,8 @@ msgstr "kleur modus"
 #: ../build/lib/darktable/plugins/introspection_denoiseprofile.c:403
 #: ../build/lib/darktable/plugins/introspection_exposure.c:102
 #: ../build/lib/darktable/plugins/introspection_exposure.c:169
-#, fuzzy
 msgid "compensate highlight preservation"
-msgstr "ligpunt rekonstruksie"
+msgstr "kompenseer hoogtepunt bewaring"
 
 #: ../build/lib/darktable/plugins/introspection_denoiseprofile.c:417
 msgid "non-local means"
@@ -4652,9 +4646,8 @@ msgstr "uiterste luminansie versadiging"
 
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:308
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:487
-#, fuzzy
 msgid "shadows ↔ highlights balance"
-msgstr "skaduwee hoogtepunte balans"
+msgstr "skadus ↔ hoogtepunte balans"
 
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:314
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:491
@@ -4714,9 +4707,8 @@ msgstr "gesplete lyn"
 
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:380
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:535
-#, fuzzy
 msgid "enable highlight reconstruction"
-msgstr "ligpunt rekonstruksie"
+msgstr "aktiveer hoogtepunt rekonstruksie"
 
 #: ../build/lib/darktable/plugins/introspection_filmicrgb.c:549
 #: ../build/lib/darktable/plugins/introspection_toneequal.c:372
@@ -4824,29 +4816,24 @@ msgid "flip horizontally"
 msgstr "flip horisontaal"
 
 #: ../build/lib/darktable/plugins/introspection_flip.c:104
-#, fuzzy
 msgid "transpose"
-msgstr "vertalers"
+msgstr "transponeer"
 
 #: ../build/lib/darktable/plugins/introspection_flip.c:107
-#, fuzzy
 msgid "rotate 180°"
-msgstr "roteer 180 grade"
+msgstr "roteer 180°"
 
 #: ../build/lib/darktable/plugins/introspection_flip.c:109
-#, fuzzy
 msgid "rotate 90°"
-msgstr "roteer -90 grade"
+msgstr "roteer 90°"
 
 #: ../build/lib/darktable/plugins/introspection_flip.c:110
-#, fuzzy
 msgid "rotate -90°"
-msgstr "roteer -90 grade"
+msgstr "roteer -90°"
 
 #: ../build/lib/darktable/plugins/introspection_flip.c:111
-#, fuzzy
 msgid "transverse"
-msgstr "in tru"
+msgstr "transversaal"
 
 #: ../build/lib/darktable/plugins/introspection_globaltonemap.c:60
 #: ../build/lib/darktable/plugins/introspection_globaltonemap.c:125
@@ -16822,9 +16809,8 @@ msgid "manually draw structure lines"
 msgstr "wissel sigbaarheid van struktuurlyne"
 
 #: ../src/iop/ashift.c:6141
-#, fuzzy
 msgid "rectangle"
-msgstr "invalshoek"
+msgstr "reghoek"
 
 #: ../src/iop/ashift.c:6143
 #, fuzzy
@@ -21896,9 +21882,8 @@ msgid "rotate by 180 degrees"
 msgstr "roteer met 180 grade"
 
 #: ../src/iop/flip.c:601
-#, fuzzy
 msgid "transform"
-msgstr "vertalers"
+msgstr "transformeer"
 
 #: ../src/iop/flip.c:605 ../src/libs/live_view.c:334
 msgid "rotate 90 degrees CCW"
